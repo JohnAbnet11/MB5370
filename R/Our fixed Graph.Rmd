@@ -1,0 +1,69 @@
+---
+title: "Bad graph"
+output: html_document
+date: "2023-05-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+---
+title: "BadGraph"
+author: "Amica B Limosani"
+date: "2023-05-04"
+output: html_document
+---
+
+
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+```
+```{r}
+setwd("C:/github/MB5370/Data")
+```
+
+
+```{r}
+BadGraph2 <- read.csv("BadGraph.csv")
+```
+
+
+```{r}
+ggplot(data = BadGraph2) + 
+  <geom_point(
+```
+
+
+```{r}
+BadGraph2 %>%
+  pivot_longer(c('Carnarvon','Useless.loop','Denham','Mockey.Mia'),names_to = "Location", values_to = "Species")
+```
+
+
+```{r}
+graph3 <- pivot_longer(BadGraph2, 2:5, names_to = "Location", values_to = "SpeciesRichness")
+```
+
+```{r}
+ggplot(data = graph3 , mapping = aes(x = Location, y = SpeciesRichness, fill = Location)) +
+  geom_col() +
+  facet_wrap(~ X) +
+  labs(
+    x = "Location",
+    y = " Average Species Richness",
+  ) +
+  scale_y_continuous(expand = c(0,0)) +
+  theme_bw() +
+ theme(axis.text.x = element_text(angle = -45, hjust = 0))
+```
+
+```{r}
+ggplot(data = graph3) +
+  geom_col(mapping = aes(x = Location, y = SpeciesRichness, fill = Location)) +
+  facet_wrap(~ Species) +
+  theme(axis.text.x = element_text(angle = -90, hjust = 0))
