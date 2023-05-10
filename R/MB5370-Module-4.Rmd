@@ -1,36 +1,4 @@
----
-title: "MB5370- Module-4"
-output: html_document
-date: "2023-05-04"
----
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 ###--------------------------------###
 #Module 04: Data Science in R ####
 #MB5370
@@ -429,4 +397,402 @@ use_git_config(user.name = "JohnAbnet11", user.email = "john.abnet1@gmail.com")
 ```
 
 
+####Workshop 4 Data Wrangling
+
+###5.3 What is a tibble
+
+#Tibbles are a type of data frame 
+#they help future proof code in an aging coding langauge
+#tibble is part of tidyverse package
+#to convert regular data frames into tibbles you can use
+```{r}
+as_tibble()
+```
+
+#also tribbles which stand for transposed tibble (tribble())
+#tribbles have one purpose: to help you do data entry directly in your script
+```{r}
+tribble(
+  ~x , ~y, ~z,
+  #--
+  "a", 2, 3.6,
+  "b", 1, 8.5
+)
+```
+
+#lets look at a difference between a tibble and a data.frame
+#tibbles only print first 10 rows and all columns that can fit on the screen, easier with large data sets
+
+#lets have a look at examining data using tibble
+```{r}
+tibble(
+  a = lubridate::now() + runif(1e3) * 86400,
+  b = lubridate::today() + runif(1e3) * 30,
+  c = 1:1e3,
+  d = runif(1e3),
+  e = sample(letters, 1e3, replace = TRUE)
+)
+#> # A tibble: 1,000 × 5
+#>   a                   b              c     d e    
+#>   <dttm>              <date>     <int> <dbl> <chr>
+#> 1 2022-11-18 23:15:18 2022-11-25     1 0.368 n    
+#> 2 2022-11-19 17:20:28 2022-11-30     2 0.612 l    
+#> 3 2022-11-19 11:44:07 2022-12-10     3 0.415 p    
+#> 4 2022-11-19 01:05:24 2022-12-09     4 0.212 m    
+#> 5 2022-11-18 21:29:41 2022-12-06     5 0.733 i    
+#> 6 2022-11-19 08:30:38 2022-12-02     6 0.460 n    
+#> # ... with 994 more rows
+```
+#may need to display more than top few rows and with tibbles you can use 
+#print() to designate the number of rows (n) and display width (width = Inf #displays every column)
+
+#now lets learn how to pull out a single variable from our dataframe.
+#can use a dollar sign ($) to extract a full column of data (by name) or
+#the simple double bracket to pull out an exact row of data (by row position). 
+#pull out an exact cell value using [[,]]
+```{r}
+df <- tibble(
+  x = runif(5),
+  y = rnorm(5)
+)
+#extract by name
+df$x
+#> [1] 0.73296674 0.23436542 0.66035540 0.03285612 0.46049161
+df[["x"]]
+# [1] 0.73296674 0.23436542 0.66035540 0.03285612 0.46049161
+df[[1]]
+#> [1] 0.73296674 0.23436542 0.66035540 0.03285612 0.46049161
+#> 
+# Extract by exact position
+df[[2,2]]
+
+```
+#why would you want to do this ?
+# could be to add a label to a plot
+
+#later on we will start to use pipes (%>%) which is a new way to do things to variables in R
+#for now just know that to use these base R function we will need to use a . as a placeholder when using pipes
+```{r}
+df %>% .$x
+#> [1] 0.73296674 0.23436542 0.66035540 0.03285612 0.46049161
+df %>% .[["x"]]
+#> [1] 0.73296674 0.23436542 0.66035540 0.03285612 0.46049161
+```
+
+#if tibbles wont do partial matching, if variable you call out doesnt match exactly whats in the data frame tibbles will generate a warning
+
+### 5.4 How can I import data
+
+#read_csv() reads commas delimited files, read_csv2() reads semicolon sperated files
+
+#the first and most important argument to read_csv() is the file
+
+#the first and most important argument to read_csv() is the file path
+#read_csv() uses the first line of data for column names but there are some cases where you wont want the very first line in order to skip the first line you can do skip = n where n is the number of lines you want to skip
+
+#can also change the defaults if your data does not contian column names; use col_names = FALSE to tell read_csv() not to treat the first row as headings
+
+#VERY IMPORTANT can also set the no data values
+
+### 5.5 Tidying data using Tidyr
+
+#table1 is "tidy" once we look at the differences of these we will figure out what makes something tidy
+table1
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table2
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <int> <chr>          <int>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ... with 6 more rows
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#> * <chr>       <int> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+
+# Spread across two tibbles
+table4a  # cases
+#> # A tibble: 3 × 3
+#>   country     `1999` `2000`
+#> * <chr>        <int>  <int>
+#> 1 Afghanistan    745   2666
+#> 2 Brazil       37737  80488
+#> 3 China       212258 213766
+table4b  # population
+#> # A tibble: 3 × 3
+#>   country         `1999`     `2000`
+#> * <chr>            <int>      <int>
+#> 1 Afghanistan   19987071   20595360
+#> 2 Brazil       172006362  174504898
+#> 3 China       1272915272 1280428583
+  
+#how we make our dataset a tidy dataset is by following three interrelated rules
+#1. Each variable must hav eits own column
+#2 eac hobservation must have its own row
+#3 Each value must have its own cell
+
+#these three rules leads to an even simpler set of practical instructions:
+#1 put each dataset in a tibble
+#2 put each varaible in a column
+
+##5.5.2 Spreading and gathering data tables
+
+#first step in tidying the data is to understand what each variable and observation actually means.
+
+#once you understand the data you are looking at, the second step is to resolve one of the two common problems with untidy data:
+#1. One variable is spread across multiple columns
+#2 one observation is scattered across multiple rows
+
+#to fix these we will explore the use of two functions in tidyr:
+# pivot_longer()
+#pivot_wider ()
+
+#Using pivot_longer, according to R4DS
+#common problem is a dataset where some of the column names are not names of variables
+#but values of avariable
+#take table4a: the column names 1999 and 2000 represent values of the year variable, the values in the 1999 and 2000 columns represent values of the cases variable
+```{r}
+#> # A tibble: 3 × 3
+#>   country     `1999` `2000`
+#> * <chr>        <int>  <int>
+#> 1 Afghanistan    745   2666
+#> 2 Brazil       37737  80488
+#> 3 China       212258 213766
+```
+#to tidy a dataset we need to pivot the offending columns into a new pair of variable
+#we need 3 parameters:
+#---- the set of columns whose names are values, not varaibles. in this example, those are the columns 1999 and 2000
+#---- the name of the variable to move the column names to. here it is year
+#---- the name of the variable to move the column values to. Here it is cases
+#these parameters call for the pivot_longer():
+```{r}
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+#> # A tibble: 6 × 3
+#>   country     year   cases
+#>   <chr>       <chr>  <int>
+#> 1 Afghanistan 1999     745
+#> 2 Afghanistan 2000    2666
+#> 3 Brazil      1999   37737
+#> 4 Brazil      2000   80488
+#> 5 China       1999  212258
+#> 6 China       2000  213766
+```
+
+#columns to pivot are specified with dplyr:: select() style notation.
+#only two columns so we list them individually 
+#1999 and 2000 are non-syntactic( dont start with a letter) so we have to surround them in backticks year and cases do nto exist in table4a so we put their names in quotes
+
+#pivot_longer() makes datasets "longer" by increasing the number of rows and decreasing the number of columns
+
+------
+
+#using pivot_wider()
+# to handle an observation scattered across multiple rows. pivot_wider() is the opposite of pivot_longer() in table2 we see an observation is a country in a year
+#with the observation spread across two rows:
+```{r}
+table2
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <int> <chr>          <int>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ... with 6 more rows
+```
+
+#to make this tidy we only need two parameters:
+#1 the column to take variables from: type
+#2 the column to take values from: count
+
+#now we can use pivot_wider() to make the table shorter and wider by creating ne separate columns for cases and population and populating them with their associated values
+
+### 5.5.3 Separating and uniting data tables
+
+# have tidied table2 and table 4 nut now we will explore table3 which has a different issue that makes it untidy
+
+#in table3 we see one column (rate) that contains two variables (cases and population)
+#can use the separate() function which separates one column into multiple columns
+```{r}
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#> * <chr>       <int> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+```
+
+
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+#> # A tibble: 6 × 4
+#>   country      year cases  population
+#>   <chr>       <int> <chr>  <chr>     
+#> 1 Afghanistan  1999 745    19987071  
+#> 2 Afghanistan  2000 2666   20595360  
+#> 3 Brazil       1999 37737  172006362 
+#> 4 Brazil       2000 80488  174504898 
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+ 
+ # usually splits table by non numerical character but can specify by using 
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+```
+ # both cases and population are listed as character types
+ #we want them to be numbers so we use convert = TRUE
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), convert = TRUE)
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+ 
+### 5.5.4 Handling Missing values
+
+#### Workshop 5------------------------------#
+
+### 6.4 Installing the Spatial R packages
+
+```{r}
+#install necessary packages
+install.packages("sf")
+install.packages("terra")
+install.packages("leaflet")
+install.packages("tmap")
+#load into R library
+library(tidyverse)
+library(sf)
+library (terra)
+library(leaflet)
+library(tmap)
+library(mgcv)
+```
+### 6.6 loading the spatial dataset
+
+```{r}
+library(readr)
+setwd("C:/github/MB5370")
+dat <- read_csv("Data/copepods_raw.csv")
+dat
+```
+#First we must understand what this data is telling us
+
+### 6.7.1 Check Coordinates
+```{r}
+library(ggplot2)
+ggplot(dat) + 
+  aes(x = longitude, y = latitude, color = richness_raw) +
+  geom_point()
+```
+#this looks good, but this is not a map, it doesnt have critical things a real map needs, and real distances between these points are probably not correct
+
+```{r}
+ggplot(dat, aes(x = latitude, y = richness_raw)) + 
+  stat_smooth() + 
+  geom_point()
+```
+
+### Getting going with maps
+
+#we will repeat the map of richness, but now using some of Rs specilist packages
+#turn our point data into a spatially referenced data frame using sf package
+```{r}
+sdat <- st_as_sf(dat, coords = c("longitude", "latitude"), 
+                 crs = 4326)
+#st_as_sf converts different data types to simple features
+#dat is our orginal data
+#coords gives the name of the columns that relate to the spatial coordinates of X coordinate
+#crs stands for coordinate reference system which we will discuss next
+```
+
+### 6.9 Coordinate reference systems
+
+```{r}
+crs4326 <- st_crs(4326)
+crs4326 # look at the whole CRS
+crs4326$Name # pull out just the name of the crs
+[1] "WGS 84"
+```
+```{r}
+crs4326$wkt # crs in well-known text format
+```
+
+### 6.10 Feature Collection(Points)
+
+```{r}
+sdat
+```
+
+### 6.11 Cartography
+
+```{r}
+plot(sdat["richness_raw"])
+```
+#we have only plotted the richness column
+
+```{r}
+plot(sdat)
+```
+
+### 6.12 Thematic maps for communication
+#will use tmap to build and add on layers
+#here we only have one layer from sdat
+#we declare the layer with tm_shape()
+```{r}
+tm1 = tm_shape(sdat) + 
+  tm_dots(col = "richness_raw")
+```
+
+#use tmap_save to save the map to your working directory
+```{r}
+tmap_save(tm1, filename = "Richness-map.png", 
+          width = 600, height = 600)
+```
+
+###6.13 Mapping spatial polygons as layers
+
+##6.13.1 Loading shapefiles
+
+```{r}
+setwd("C:/github/MB5370")
+aus <- st_read("Data/Aussie.shp")
+```
+## 6.13.2
 
